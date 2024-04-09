@@ -1,26 +1,36 @@
 const express = require('express');
+// Import the Express.js framework
 const app = express();
+
+// set port to 3000
 const port = 3000;
+
 var bodyParser = require('body-parser');
 
-app.use(bodyParser.urlencoded());
-app.use(bodyParser.json());
+app.use(bodyParser.urlencoded()); // for post requests
+app.use(bodyParser.json()); // for working with APIs that send data in JSON format.
 
+// import the AWS SDK (Software Development Kit) 
 const AWS = require('aws-sdk');
+
+//  create a new instance of the AWS S3
 const s3 = new AWS.S3();
 
 AWS.config.update({
-  region: 'us-east-1', // Change to your desired region
+  region: 'us-east-1', 
 });
 
-const DynamoDB = new AWS.DynamoDB();
+//  create a new instance of the AWS dynamodb
+const DynamoDB = new AWS.DynamoDB()
 
+// Route handler for handling user login attempts
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
   const params = {
     TableName: 'login',
   };
 
+  // invoke the scan method of the DynamoDB 
   DynamoDB.scan(params, function (err, data) {
     if (err) {
       console.error('Unable to find login', err);
@@ -41,11 +51,12 @@ app.post('/login', (req, res) => {
   });
 });
 
+// Route handler for GET requests to the '/login' endpoint
 app.get('/login', (req, res) => {
   res.sendFile('./login.html', { root: __dirname });
 });
 
-
+// Route handler for GET requests to the '/register' endpoint
 app.get('/register', (req, res) => {
   res.sendFile('./register.html', { root: __dirname });
 });
@@ -192,34 +203,15 @@ app.get('/query', (req, res) => {
   const title = req.query.title;
   const year = req.query.year;
   const artist = req.query.artist;
-  const params = req.query.artist ? {
-    TableName: 'music',
-    FilterExpression: 'contains (#title, :title) AND contains (#year, :year) AND contains (#artist, :artist)',
-    ExpressionAttributeNames: {
-      '#title': 'title',
-      '#year': 'year',
-      '#artist': 'artist',
-    },
-    ExpressionAttributeValues: {
-      ':title': { S: title },
-      ':year': { S: year },
-      ':artist': { S: artist },
-    }
-  } : {
-    TableName: 'music',
-  }
-  DynamoDB.scan(params, function (err, data) {
-    if (err) {
-      console.error('Unable to find music', err);
-      res.status(500).send('Internal Server Error');
-    } else {
-      res.send(`
-        <html>
-          <head>
-            <title>Query Area</title>
-          </head>
 
-          <body>
+  if (!title && !year && !artist) {
+    // Render the form for user to input the query
+    res.send(`
+      <html>
+        <head>
+          <title>Query Area</title>
+        </head>
+        <body>
           <a href="/user?user_name=${user}"/>User Area</a>  
           <a href="/subscription?user_name=${user}"/>Subscription Area</a>
           <a href="/query?user_name=${user}"/>Query Area</a>
@@ -228,7 +220,6 @@ app.get('/query', (req, res) => {
           <form action="/query" method="get">
             <label for="title">Title:</label>
             <input type="hidden" name="user_name" value="${user}">
-
             <input type="text" id="title" name="title"><br><br>
 
             <label for="year">Year:</label>
@@ -239,40 +230,85 @@ app.get('/query', (req, res) => {
 
             <button type="submit">Query</button>
           </form>
+        </body>
+      </html>
+    `);
+  } else {
+    // Perform the query with provided parameters
+    const params = {
+      TableName: 'music',
+      FilterExpression: 'contains (#title, :title) AND contains (#year, :year) AND contains (#artist, :artist)',
+      ExpressionAttributeNames: {
+        '#title': 'title',
+        '#year': 'year',
+        '#artist': 'artist',
+      },
+      ExpressionAttributeValues: {
+        ':title': { S: title },
+        ':year': { S: year },
+        ':artist': { S: artist },
+      }
+    };
 
-        <ul>
-              ${data.Items.map(
-        (item) => {
-          // Define parameters for the pre-signed URL
-          const params = {
-            Bucket: 's3980059-mybucket',
-            Key: 'artist_images/' + item.artist.S + '.jpg',
-            Expires: 36000 // Expiration time in seconds (e.g., 1 hour)
-          };
+    DynamoDB.scan(params, function (err, data) {
+      if (err) {
+        console.error('Unable to find music', err);
+        res.status(500).send('Internal Server Error');
+      } else {
+        if (data.Items.length === 0) {
+          res.send('No result is retrieved. Please query again');
+        } else {
+          // Render the results
+          res.send(`
+            <html>
+              <head>
+                <title>Query Area</title>
+              </head>
 
-          // Generate the pre-signed URL
-          const url = s3.getSignedUrl('getObject', params);
-          console.log(url)
-          return `
-                  <li>
-                    <img src="${url}" />
-                    ${item.artist.S} ${item.title.S} ${item.year.S}
-                    <form action="/subscribe" method="post">
-                      <input type="hidden" name="user_name" value="${user}">
-                      <input type="hidden" name="title" value="${item.title.S}">
-                      <input type="hidden" name="artist" value="${item.artist.S}">
-                      <button type="submit">Subscribe</button>
-                    </form>
-                  </li>
-                `
+              <body>
+                <a href="/user?user_name=${user}"/>User Area</a>  
+                <a href="/subscription?user_name=${user}"/>Subscription Area</a>
+                <a href="/query?user_name=${user}"/>Query Area</a>
+                <a href="/login"/>Log Out</a>
 
+                <ul>
+                  ${data.Items.map(
+                    (item) => {
+                      // Define parameters for the pre-signed URL
+                      const params = {
+                        Bucket: 's3980059-mybucket',
+                        Key: 'artist_images/' + item.artist.S + '.jpg',
+                        Expires: 36000 // Expiration time in seconds (e.g., 1 hour)
+                      };
+
+                      // Generate the pre-signed URL
+                      const url = s3.getSignedUrl('getObject', params);
+                      console.log(url)
+                      return `
+                        <li>
+                          <img src="${url}" />
+                          ${item.artist.S} ${item.title.S} ${item.year.S}
+                          <form action="/subscribe" method="post">
+                            <input type="hidden" name="user_name" value="${user}">
+                            <input type="hidden" name="title" value="${item.title.S}">
+                            <input type="hidden" name="artist" value="${item.artist.S}">
+                            <button type="submit">Subscribe</button>
+                          </form>
+                        </li>
+                      `
+                    }
+                  ).join('')}
+                </ul>
+              </body>
+            </html>
+          `);
         }
-      ).join('')}
-            </ul>
-            `)
-    }
-  })
-})
+      }
+    });
+  }
+});
+
+
 
 app.get('/dashboard', (req, res) => {
   const user = req.query.user_name;
