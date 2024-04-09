@@ -21,9 +21,6 @@ const DynamoDB = new AWS.DynamoDB()
 //  create a new instance of the AWS S3
 const s3 = new AWS.S3();
 
-
-
-
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
@@ -32,14 +29,7 @@ app.post('/login', async (req, res) => {
   try {
     // Extract email and password from the request body
     const { email, password } = req.body;
-    // fetch('https://enikknhrk7.execute-api.us-east-1.amazonaws.com/default/login',{method:'POST',body:{email,password}}).then(success=>{
-    // console.log(success)
-    // res.send(`/user?user_name=${response.data.user_name}`);
-    // }).catch(error=>{
-    //   console.log(error)
-    //     res.send('login failed')
-    // })
-    // Make an HTTP POST request to the API Gateway endpoint for the login Lambda function
+
     const response = await axios.post('https://enikknhrk7.execute-api.us-east-1.amazonaws.com/default/login', { email, password });
 
     // Handle the response from the Lambda function
@@ -112,89 +102,6 @@ app.get('/user', (req, res) => {
           <a href="/login"/>Log Out</a>
             <h1>Welcome ${user}</h1>`)
 })
-
-
-// Route handler for handling user subscriptions
-// app.get('/subscription', async (req, res) => {
-//   const user = req.query.user_name;
-
-//   try {
-//     // Make HTTP request to the API Gateway endpoint that triggers the Lambda function
-//     const response = await axios.get(`https://q9v103dzkk.execute-api.us-east-1.amazonaws.com/default/subscription?user_name=${user}`);
-
-//     // Handle response from Lambda function
-//     if (response.status === 200) {
-//       // Subscription data received, render the page
-//       const subscriptionData = response.data;
-//       res.send(renderSubscriptionPage(subscriptionData, user));
-//     } else if (response.status === 404) {
-//       // No subscriptions found, render appropriate message
-//       res.send(renderNoSubscriptionPage(user));
-//     } else {
-//       // Other error occurred, handle appropriately
-//       res.status(response.status).send('Error retrieving subscriptions');
-//     }
-//   } catch (error) {
-//     // If any error occurs, display error message
-//     console.error('Error retrieving subscriptions:', error);
-//     res.status(500).send('Internal Server Error');
-//   }
-// });
-
-// // Function to render the subscription page with subscription data
-// function renderSubscriptionPage(subscriptionData, user) {
-//   let html = `
-//     <html>
-//       <head>
-//         <title>Subscription Area</title>
-//       </head>
-//       <body>
-//         <a href="/user?user_name=${user}">User Area</a>
-//         <a href="/subscription?user_name=${user}">Subscription Area</a>
-//         <a href="/query?user_name=${user}">Query Area</a>
-//         <a href="/login">Log Out</a>
-//         <ul>
-//   `;
-//   subscriptionData.forEach(item => {
-//     html += `
-//           <li>
-//             <img src="${item.artist.S}.jpg" />
-//             ${item.artist.S} ${item.title.S}
-//             <form action="/remove" method="post">
-//               <input type="hidden" name="user_name" value="${user}">
-//               <input type="hidden" name="title" value="${item.title.S}">
-//               <input type="hidden" name="artist" value="${item.artist.S}">
-//               <button type="submit">Remove</button>
-//             </form>
-//           </li>
-//     `;
-//   });
-//   html += `
-//         </ul>
-//       </body>
-//     </html>
-//   `;
-//   return html;
-// }
-
-// // Function to render the page when no subscriptions are found
-// function renderNoSubscriptionPage(user) {
-//   return `
-//     <html>
-//       <head>
-//         <title>Subscription Area</title>
-//       </head>
-//       <body>
-//         <a href="/user?user_name=${user}">User Area</a>
-//         <a href="/subscription?user_name=${user}">Subscription Area</a>
-//         <a href="/query?user_name=${user}">Query Area</a>
-//         <a href="/login">Log Out</a>
-//         <p>No subscriptions found</p>
-//       </body>
-//     </html>
-//   `;
-// }
-
 
 app.get('/subscription', async (req, res) => {
   const user = req.query.user_name;
@@ -343,159 +250,6 @@ function renderDashboardPage(data, user) {
   `;
 }
 
-
-// app.get('/query', (req, res) => {
-//   const user = req.query.user_name;
-//   const title = req.query.title;
-//   const year = req.query.year;
-//   const artist = req.query.artist;
-
-//   if (!title && !year && !artist) {
-//     // Render the form for user to input the query
-//     res.send(`
-//       <html>
-//         <head>
-//           <title>Query Area</title>
-//         </head>
-//         <body>
-//           <a href="/user?user_name=${user}"/>User Area</a>  
-//           <a href="/subscription?user_name=${user}"/>Subscription Area</a>
-//           <a href="/query?user_name=${user}"/>Query Area</a>
-//           <a href="/login"/>Log Out</a>
-
-//           <form action="/query" method="get">
-//             <label for="title">Title:</label>
-//             <input type="hidden" name="user_name" value="${user}">
-//             <input type="text" id="title" name="title"><br><br>
-
-//             <label for="year">Year:</label>
-//             <input type="text" id="year" name="year"><br><br>
-
-//             <label for="artist">Artist:</label>
-//             <input type="text" id="artist" name="artist"><br><br>
-
-//             <button type="submit">Query</button>
-//           </form>
-//         </body>
-//       </html>
-//     `);
-//   } else {
-//     // Query the data and display results
-//     // Construct the URL for the API Gateway endpoint
-//     const apiUrl = `https://aly0egdiwa.execute-api.us-east-1.amazonaws.com/default/querygetonly/query?user_name=${user}&title=${title}&year=${year}&artist=${artist}`;
-
-//     // Fetch data from the API Gateway endpoint
-//     fetch(apiUrl)
-//       .then(response => {
-//         if (!response.ok) {
-//           throw new Error('Failed to fetch data');
-//         }
-//         return response.json();
-//       })
-//       .then(data => {
-//         // Render the results
-//         res.send(`
-//           <html>
-//             <head>
-//               <title>Query Area</title>
-//             </head>
-
-//             <body>
-//               <a href="/user?user_name=${user}"/>User Area</a>  
-//               <a href="/subscription?user_name=${user}"/>Subscription Area</a>
-//               <a href="/query?user_name=${user}"/>Query Area</a>
-//               <a href="/login"/>Log Out</a>
-
-//               <ul>
-//                 ${data.map(item => {
-//                   // Display the queried music results
-//                   return `
-//                     <li>
-//                       ${item.artist} - ${item.title} (${item.year})
-//                       <form action="/subscribe" method="post">
-//                         <input type="hidden" name="user_name" value="${user}">
-//                         <input type="hidden" name="title" value="${item.title}">
-//                         <input type="hidden" name="artist" value="${item.artist}">
-//                         <button type="submit">Subscribe</button>
-//                       </form>
-//                     </li>
-//                   `;
-//                 }).join('')}
-//               </ul>
-//             </body>
-//           </html>
-//         `);
-//       })
-//       .catch(error => {
-//         console.error('Error fetching data:', error);
-//         res.status(500).send('Internal Server Error');
-//       });
-//   }
-// });
-
-// app.post('/query', (req, res) => {
-//   const { title, year, artist } = req.body;
-//   const user = req.query.user_name;
-
-//   // Construct the URL for the API Gateway endpoint
-//   const apiUrl = 'https://20167y6jza.execute-api.us-east-1.amazonaws.com/default/querypostonly';
-
-//   // Construct the request body
-//   const requestBody = JSON.stringify({ title, year, artist });
-
-//   // Make a POST request to the API Gateway endpoint
-//   fetch(apiUrl, {
-//     method: 'POST',
-//     headers: {
-//       'Content-Type': 'application/json'
-//     },
-//     body: requestBody
-//   })
-//   .then(response => {
-//     if (!response.ok) {
-//       throw new Error('Failed to fetch data');
-//     }
-//     return response.json();
-//   })
-//   .then(data => {
-//     // Render the results
-//     res.send(`
-//       <html>
-//         <head>
-//           <title>Query Area</title>
-//         </head>
-
-//         <body>
-//           <a href="/user?user_name=${user}"/>User Area</a>  
-//           <a href="/subscription?user_name=${user}"/>Subscription Area</a>
-//           <a href="/query?user_name=${user}"/>Query Area</a>
-//           <a href="/login"/>Log Out</a>
-
-//           <ul>
-//             ${data.map(item => {
-//               // Display the queried music results
-//               return `
-//                 <li>
-//                   ${item.artist} - ${item.title} (${item.year})
-//                   <form action="/subscribe" method="post">
-//                     <input type="hidden" name="user_name" value="${user}">
-//                     <input type="hidden" name="title" value="${item.title}">
-//                     <input type="hidden" name="artist" value="${item.artist}">
-//                     <button type="submit">Subscribe</button>
-//                   </form>
-//                 </li>
-//               `;
-//             }).join('')}
-//           </ul>
-//         </body>
-//       </html>
-//     `);
-//   })
-//   .catch(error => {
-//     console.error('Error fetching data:', error);
-//     res.status(500).send('Internal Server Error');
-//   });
-// });
 
 app.post('/query', (req, res) => {
   const { title, year, artist } = req.body;
