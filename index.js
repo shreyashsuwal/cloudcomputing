@@ -5,7 +5,7 @@ const axios = require('axios'); // Import Axios for making HTTP requests
 const app = express();
 const port = 3000;
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`Server is running on port ${port}`);
 });
 
