@@ -25,7 +25,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 // Route handler for handling user login attempts
-app.post('/login', async (req, res) => {
+app.post('/login', async (req, res) => { 
   try {
     // Extract email and password from the request body
     const { email, password } = req.body;
@@ -44,8 +44,8 @@ app.post('/login', async (req, res) => {
     }
   } catch (error) {
     // If an error occurs, send an error message
-    console.error('Error logging in:', error.message);
-    res.status(500).send('Internal Server Error');
+    console.error('Login failed:', error.message);
+    res.status(500).send('Login failed');
   }
 });
 
