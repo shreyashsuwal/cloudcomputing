@@ -3,13 +3,11 @@ const bodyParser = require('body-parser');
 const axios = require('axios'); // Import Axios for making HTTP requests
 
 const app = express();
-const port = 443;
+const port = 800;
 
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   console.log(`Server is running on port ${port}`);
 });
-
-
 
 const AWS = require('aws-sdk');
 AWS.config.update({
